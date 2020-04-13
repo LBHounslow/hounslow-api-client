@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Session;
+namespace Hounslow\ApiClient\Session;
 
 class Session
 {

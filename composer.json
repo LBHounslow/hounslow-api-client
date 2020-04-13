@@ -3,8 +3,6 @@
   "description": "An interface for the Hounslow API",
   "type": "library",
   "license": "proprietary",
-  "minimum-stability": "dev",
-  "prefer-stable": true,
   "require": {
     "php": "^7.2",
     "ext-json": "*",
@@ -15,12 +13,12 @@
   },
   "autoload": {
     "psr-4": {
-      "App\\": "src/"
+      "Hounslow\\ApiClient\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "App\\Tests\\": "tests/"
+      "Hounslow\\ApiClient\\Tests\\": "tests/"
     }
   }
 }

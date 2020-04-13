@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Client;
+namespace Hounslow\ApiClient\Client;
 
-use App\Entity\AccessToken;
-use App\Enum\HttpStatusCode;
-use App\Exception\ApiClientException;
-use App\Response\ApiResponse;
-use App\Session\Session;
+use Hounslow\ApiClient\Entity\AccessToken;
+use Hounslow\ApiClient\Enum\HttpStatusCode;
+use Hounslow\ApiClient\Exception\ApiClientException;
+use Hounslow\ApiClient\Response\ApiResponse;
+use Hounslow\ApiClient\Session\Session;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
 
-class ApiClient
+class Client
 {
     const BASE_URL = '[ API BASE URL ]';
     const CLIENT_ID = '[ YOUR CLIENT ID ]';

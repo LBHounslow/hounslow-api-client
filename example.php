@@ -1,9 +1,9 @@
 <?php
 require_once 'vendor/autoload.php';
 
-use App\Client\ApiClient;
+use Hounslow\ApiClient\Client\Client as ApiClient;
 use GuzzleHttp\Client as GuzzleClient;
-use App\Session\Session;
+use Hounslow\ApiClient\Session\Session;
 
 $apiClient = new ApiClient(
     new GuzzleClient(),

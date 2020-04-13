@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace Hounslow\ApiClient\Entity;
 
 class AccessToken
 {
