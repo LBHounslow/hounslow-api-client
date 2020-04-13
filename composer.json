@@ -3,6 +3,7 @@
   "description": "An interface for the Hounslow API",
   "type": "library",
   "license": "proprietary",
+  "minimum-stability": "dev",
   "require": {
     "php": "^7.2.5",
     "ext-json": "*",
