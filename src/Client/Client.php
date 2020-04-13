@@ -13,15 +13,6 @@ use GuzzleHttp\RequestOptions;
 
 class Client
 {
-    const BASE_URL = '[ API BASE URL ]';
-    const CLIENT_ID = '[ YOUR CLIENT ID ]';
-    const CLIENT_SECRET = '[ YOUR CLIENT SECRET ]';
-
-    const GRANT_TYPE_PASSWORD = 'password';
-    const VALID_GRANT_TYPES = [
-        self::GRANT_TYPE_PASSWORD
-    ];
-
     const TIMEOUT = 5;
 
     /**
@@ -30,9 +21,24 @@ class Client
     private $client;
 
     /**
+     * @var Session
+     */
+    private $session;
+
+    /**
      * @var string
      */
-    private $grantType = self::GRANT_TYPE_PASSWORD;
+    private $baseUrl;
+
+    /**
+     * @var string
+     */
+    private $clientId;
+
+    /**
+     * @var string
+     */
+    private $clientSecret;
 
     /**
      * @var string
@@ -55,65 +61,30 @@ class Client
     private $accessToken;
 
     /**
-     * @var Session
-     */
-    private $session;
-
-    /**
      * @param GuzzleClient $client
      * @param Session $session
+     * @param string $baseUrl
+     * @param string $clientId
+     * @param string $clientSecret
      * @param string $username
      * @param string $password
      */
     public function __construct(
         GuzzleClient $client,
         Session $session,
-        string $username,
-        string $password
+        string $baseUrl,
+        string $clientId,
+        string $clientSecret,
+        string $username = '',
+        string $password = ''
     ) {
-        $this->setClient($client);
+        $this->client = $client;
+        $this->session = $session;
+        $this->baseUrl = $baseUrl;
+        $this->clientId = $clientId;
+        $this->clientSecret = $clientSecret;
         $this->setUsername($username);
         $this->setPassword($password);
-        $this->session = $session;
-    }
-
-    /**
-     * @return GuzzleClient
-     */
-    public function getClient(): GuzzleClient
-    {
-        return $this->client;
-    }
-
-    /**
-     * @param GuzzleClient $client
-     * @return $this
-     */
-    public function setClient(GuzzleClient $client): self
-    {
-        $this->client = $client;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getGrantType(): string
-    {
-        return $this->grantType;
-    }
-
-    /**
-     * @param string $grantType
-     * @return $this
-     */
-    public function setGrantType(string $grantType): self
-    {
-        if (!in_array($grantType, self::VALID_GRANT_TYPES)) {
-            throw new \InvalidArgumentException('Invalid Grant Type');
-        }
-        $this->grantType = $grantType;
-        return $this;
     }
 
     /**
@@ -161,28 +132,19 @@ class Client
     }
 
     /**
-     * @param array $scope
-     * @return $this
-     */
-    public function setScope(array $scope): self
-    {
-        $this->scope = $scope;
-        return $this;
-    }
-
-    /**
      * @return AccessToken
      * @throws ApiClientException
      */
     public function getAccessToken()
     {
+        $key = md5($this->baseUrl.$this->getUsername().$this->getPassword().$this->clientId);
         if (
             !$this->accessToken
-            || !$this->session->has('accessToken') /** @var AccessToken accessToken */
-            || !$this->session->get('accessToken')->isValid()
+            || !$this->session->has($key) /** @var AccessToken accessToken */
+            || !$this->session->get($key)->isValid()
         ) {
             $accessToken = $this->requestAccessToken();
-            $this->session->set('accessToken', $accessToken);
+            $this->session->set($key, $accessToken);
             $this->accessToken = $accessToken;
         }
         return $this->accessToken;
@@ -198,7 +160,7 @@ class Client
     {
         /** @var Response $response */
         $response = $this->client->post(
-            self::BASE_URL . $endpoint,
+            $this->baseUrl . $endpoint,
             [
                 RequestOptions::JSON => $data,
                 RequestOptions::HEADERS => [
@@ -227,7 +189,7 @@ class Client
     {
         /** @var Response $response */
         $response = $this->client->get(
-            self::BASE_URL . $endpoint,
+            $this->baseUrl . $endpoint,
             [
                 RequestOptions::HEADERS => [
                     'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
@@ -242,7 +204,8 @@ class Client
             || $response->getStatusCode() !== HttpStatusCode::OK
             || empty((string) $response->getBody())
         ) {
-            throw new ApiClientException($response->getStatusCode(), 'Unexpected response');
+            $httpStatusCode = !empty($response->getStatusCode()) ? $response->getStatusCode() : HttpStatusCode::INTERNAL_SERVER_ERROR;
+            throw new ApiClientException($httpStatusCode, 'Unexpected response');
         }
 
         return new ApiResponse($response);
@@ -254,14 +217,18 @@ class Client
      */
     public function requestAccessToken()
     {
+        if (!$this->getUsername() || !$this->getPassword()) {
+            throw new \Exception('Username and Password must be set');
+        }
+
         /** @var Response $response */
         $response = $this->client->post(
-            self::BASE_URL . '/api/accessToken',
+            $this->baseUrl . '/api/accessToken',
             [
                 RequestOptions::FORM_PARAMS => [
-                    'grant_type' => $this->getGrantType(),
-                    'client_id' => self::CLIENT_ID,
-                    'client_secret' => self::CLIENT_SECRET,
+                    'grant_type' => 'password',
+                    'client_id' => $this->clientId,
+                    'client_secret' => $this->clientSecret,
                     'scope' => $this->getScope(),
                     'username' => $this->getUsername(),
                     'password' => $this->getPassword(),
@@ -278,7 +245,8 @@ class Client
             || empty((string) $response->getBody())
             || $response->getStatusCode() !== HttpStatusCode::OK
         ) {
-            throw new ApiClientException(HttpStatusCode::INTERNAL_SERVER_ERROR, 'Invalid response');
+            $httpStatusCode = !empty($response->getStatusCode()) ? $response->getStatusCode() : HttpStatusCode::INTERNAL_SERVER_ERROR;
+            throw new ApiClientException($httpStatusCode, 'Unsupported response');
         }
 
         $data = json_decode((string) $response->getBody(), true);

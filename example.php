@@ -8,9 +8,18 @@ use Hounslow\ApiClient\Session\Session;
 $apiClient = new ApiClient(
     new GuzzleClient(),
     new Session(),
-    '[ YOUR USERNAME ]',
-    '[ YOUR PASSWORD ]'
+    '[ API BASE URL ]',
+    '[ YOUR CLIENT ID ]',
+    '[ YOUR CLIENT SECRET ]',
+    '[ YOUR USERNAME ]', // optional
+    '[ YOUR PASSWORD ]'  // optional
 );
+
+/* Or set per request...
+$apiClient
+    ->setUsername('[ YOUR USERNAME ]')
+    ->setPassword('[ YOUR PASSWORD ]');
+*/
 
 // GET example
 $response = $apiClient->get('/api/services');
@@ -20,7 +29,7 @@ $data = $response->getData();
 $response = $apiClient->post(
     '/api/log-error',
     [
-        'client_id' => ApiClient::CLIENT_ID,
+        'client_id' => '[ YOUR CLIENT ID ]', // @deprecated will be removed
         'level' => 'debug',
         'message' => 'Test message',
         'context' => '{"this":"is","a":"test"}'
