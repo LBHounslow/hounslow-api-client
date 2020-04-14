@@ -11,8 +11,12 @@ This API client provides connectivity to the Hounslow API
 ## Setup
 
 - Run `composer install`
-- Requires an API ClientID, Client Secret and an active user account.
+- Requires the API url, ClientID, Client Secret and an active user account.
 
 ## Usage
 
 See [example.php](example.php) for usage.
+
+## Tests
+
+Run `./vendor/bin/phpunit tests`

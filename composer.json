@@ -18,7 +18,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Hounslow\\ApiClient\\Tests\\": "tests/"
+      "Tests\\Unit\\": "tests/unit/"
     }
   }
 }

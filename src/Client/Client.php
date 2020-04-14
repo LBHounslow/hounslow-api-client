@@ -4,6 +4,7 @@ namespace Hounslow\ApiClient\Client;
 
 use Hounslow\ApiClient\Entity\AccessToken;
 use Hounslow\ApiClient\Enum\HttpStatusCode;
+use Hounslow\ApiClient\Enum\MonologEnum;
 use Hounslow\ApiClient\Exception\ApiClientException;
 use Hounslow\ApiClient\Response\ApiResponse;
 use Hounslow\ApiClient\Session\Session;
@@ -158,6 +159,10 @@ class Client
      */
     public function post(string $endpoint, array $data = [])
     {
+        if (strpos($endpoint, '/api/log-error') !== false) {
+            throw new \Exception('Please use the logError method to log errors');
+        }
+
         /** @var Response $response */
         $response = $this->client->post(
             $this->baseUrl . $endpoint,
@@ -204,7 +209,7 @@ class Client
             || $response->getStatusCode() !== HttpStatusCode::OK
             || empty((string) $response->getBody())
         ) {
-            $httpStatusCode = !empty($response->getStatusCode()) ? $response->getStatusCode() : HttpStatusCode::INTERNAL_SERVER_ERROR;
+            $httpStatusCode = $response instanceof Response ? $response->getStatusCode() : HttpStatusCode::INTERNAL_SERVER_ERROR;
             throw new ApiClientException($httpStatusCode, 'Unexpected response');
         }
 
@@ -245,7 +250,7 @@ class Client
             || empty((string) $response->getBody())
             || $response->getStatusCode() !== HttpStatusCode::OK
         ) {
-            $httpStatusCode = !empty($response->getStatusCode()) ? $response->getStatusCode() : HttpStatusCode::INTERNAL_SERVER_ERROR;
+            $httpStatusCode = $response instanceof Response ? $response->getStatusCode() : HttpStatusCode::INTERNAL_SERVER_ERROR;
             throw new ApiClientException($httpStatusCode, 'Unsupported response');
         }
 
@@ -261,5 +266,48 @@ class Client
         }
 
         return (new AccessToken())->hydrate($data);
+    }
+
+    /**
+     * @param string $level
+     * @param string $message
+     * @param array $context
+     * @return ApiResponse
+     * @throws ApiClientException
+     */
+    public function logError(string $level, string $message, array $context = [])
+    {
+        if (!in_array($level, MonologEnum::LEVELS)) {
+            throw new \Exception('Invalid level (see: ' . MonologEnum::LINK . ')');
+        }
+
+        if (empty($message)) {
+            throw new \Exception('Message is required');
+        }
+
+        /** @var Response $response */
+        $response = $this->client->post(
+            $this->baseUrl . '/api/log-error',
+            [
+                RequestOptions::JSON => [
+                    'level' => $level,
+                    'message' => $message,
+                    'context' => $context
+                ],
+                RequestOptions::HEADERS => [
+                    'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
+                    'Accept' => 'application/json',
+                ],
+                RequestOptions::CONNECT_TIMEOUT => self::TIMEOUT
+            ]
+        );
+
+        $validHttpStatusCodes = [HttpStatusCode::OK, HttpStatusCode::CREATED];
+
+        if (empty($response) || !in_array($response->getStatusCode(), $validHttpStatusCodes)) {
+            throw new ApiClientException($response->getStatusCode(), 'Unexpected response');
+        }
+
+        return new ApiResponse($response);
     }
 }
