@@ -2,7 +2,7 @@
 
 namespace Hounslow\ApiClient\Enum;
 
-class HttpStatusCode
+class HttpStatusCodeEnum
 {
     const OK = 200;
     const CREATED = 201;

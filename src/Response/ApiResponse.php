@@ -12,41 +12,94 @@ class ApiResponse
     private $response;
 
     /**
+     * @var bool
+     */
+    private $success = false;
+
+    /**
+     * @var array
+     */
+    private $payload = [];
+
+    /**
+     * @var int
+     */
+    private $errorCode = 0;
+
+    /**
+     * @var string
+     */
+    private $errorMessage = '';
+
+    /**
      * @param Response $response
      */
     public function __construct(Response $response)
     {
-        $this->response = $response;
+        $this->parseResponse($response);
     }
 
     /**
      * @return Response
      */
-    public function getResponse()
+    public function getResponse():? Response
     {
         return $this->response;
     }
 
     /**
-     * @return int
+     * @return bool
      */
-    public function getStatusCode()
+    public function isSuccessful():? bool
     {
-        return $this->response->getStatusCode();
+        return $this->success;
     }
 
     /**
      * @return array
      */
-    public function getData()
+    public function getPayload():? array
     {
-        $body = (string) $this->response->getBody();
-        if (!empty($body)) {
+        return $this->payload;
+    }
+
+    /**
+     * @return int
+     */
+    public function getErrorCode():? int
+    {
+        return $this->errorCode;
+    }
+
+    /**
+     * @return string
+     */
+    public function getErrorMessage():? string
+    {
+        return $this->errorMessage;
+    }
+
+    /**
+     * @param Response $response
+     */
+    public function parseResponse(Response $response)
+    {
+        $body = (string) $response->getBody();
+        if (!empty($body) && $this->isJson($body)) {
             $data = json_decode($body, true);
-            if (is_array($data) && !empty($data)) {
-                return $data;
-            }
+            $this->success = isset($data['success']) ? (bool) $data['success'] : false;
+            $this->payload = isset($data['payload']) ? $data['payload'] : [];
+            $this->errorCode = isset($data['error']['code']) ? (int) $data['error']['code'] : null;
+            $this->errorMessage = isset($data['error']['message']) ? $data['error']['message'] : null;
         }
-        return [];
+    }
+
+    /**
+     * @param string $string
+     * @return bool
+     */
+    public function isJson($string) {
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
     }
 }

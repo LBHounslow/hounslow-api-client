@@ -2,27 +2,30 @@
 
 namespace Hounslow\ApiClient\Client;
 
-use Hounslow\ApiClient\Entity\AccessToken;
-use Hounslow\ApiClient\Enum\HttpStatusCode;
-use Hounslow\ApiClient\Enum\MonologEnum;
-use Hounslow\ApiClient\Exception\ApiClientException;
-use Hounslow\ApiClient\Response\ApiResponse;
-use Hounslow\ApiClient\Session\Session;
 use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
+use Hounslow\ApiClient\Entity\AccessToken;
+use Hounslow\ApiClient\Enum\HttpStatusCodeEnum;
+use Hounslow\ApiClient\Enum\MonologEnum;
+use Hounslow\ApiClient\Exception\ApiException;
+use Hounslow\ApiClient\Response\ApiResponse;
+use Hounslow\ApiClient\Session\Session;
+use Hounslow\ApiClient\Session\SessionInterface;
 
 class Client
 {
-    const TIMEOUT = 5;
+    const LOG_ERROR_ENDPOINT = '/api/log-error';
+    const CONNECT_TIMEOUT = 5;
 
     /**
      * @var GuzzleClient
      */
-    private $client;
+    private $guzzleClient;
 
     /**
-     * @var Session
+     * @var SessionInterface
      */
     private $session;
 
@@ -62,8 +65,7 @@ class Client
     private $accessToken;
 
     /**
-     * @param GuzzleClient $client
-     * @param Session $session
+     * @param GuzzleClient $guzzleClient
      * @param string $baseUrl
      * @param string $clientId
      * @param string $clientSecret
@@ -71,16 +73,15 @@ class Client
      * @param string $password
      */
     public function __construct(
-        GuzzleClient $client,
-        Session $session,
+        GuzzleClient $guzzleClient,
         string $baseUrl,
         string $clientId,
         string $clientSecret,
         string $username = '',
         string $password = ''
     ) {
-        $this->client = $client;
-        $this->session = $session;
+        $this->setGuzzleClient($guzzleClient);
+        $this->setSession(new Session());
         $this->baseUrl = $baseUrl;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
@@ -133,53 +134,56 @@ class Client
     }
 
     /**
-     * @return AccessToken
-     * @throws ApiClientException
+     * @param GuzzleClient $guzzleClient
+     * @return $this
      */
-    public function getAccessToken()
+    public function setGuzzleClient(GuzzleClient $guzzleClient): self
     {
-        $key = md5($this->baseUrl.$this->getUsername().$this->getPassword().$this->clientId);
-        if (
-            !$this->accessToken
-            || !$this->session->has($key) /** @var AccessToken accessToken */
-            || !$this->session->get($key)->isValid()
-        ) {
-            $accessToken = $this->requestAccessToken();
-            $this->session->set($key, $accessToken);
-            $this->accessToken = $accessToken;
-        }
-        return $this->accessToken;
+        $this->guzzleClient = $guzzleClient;
+        return $this;
+    }
+
+    /**
+     * @param SessionInterface $session
+     */
+    public function setSession(SessionInterface $session)
+    {
+        $this->session = $session;
     }
 
     /**
      * @param string $endpoint
      * @param array $data
      * @return ApiResponse
-     * @throws ApiClientException
+     * @throws ApiException
+     * @throws GuzzleException
+     * @throws \Exception
      */
     public function post(string $endpoint, array $data = [])
     {
-        if (strpos($endpoint, '/api/log-error') !== false) {
+        if (strpos($endpoint, self::LOG_ERROR_ENDPOINT) !== false) {
             throw new \Exception('Please use the logError method to log errors');
         }
 
-        /** @var Response $response */
-        $response = $this->client->post(
-            $this->baseUrl . $endpoint,
-            [
-                RequestOptions::JSON => $data,
-                RequestOptions::HEADERS => [
-                    'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
-                    'Accept' => 'application/json',
-                ],
-                RequestOptions::CONNECT_TIMEOUT => self::TIMEOUT
-            ]
-        );
+        try {
+            /** @var Response $response */
+            $response = $this->guzzleClient->post(
+                $this->baseUrl . $endpoint,
+                [
+                    RequestOptions::JSON => $data,
+                    RequestOptions::HEADERS => [
+                        'Authorization' => 'Bearer ' . $this->getBearerToken(),
+                        'Accept' => 'application/json',
+                    ],
+                    RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT
+                ]
+            );
+        } catch (\Exception $e) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
+        }
 
-        $validHttpStatusCodes = [HttpStatusCode::OK, HttpStatusCode::CREATED];
-
-        if (empty($response) || !in_array($response->getStatusCode(), $validHttpStatusCodes)) {
-            throw new ApiClientException($response->getStatusCode(), 'Unexpected response');
+        if (empty($response) || !$response instanceof Response) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, 'Unrecognised response from API');
         }
 
         return new ApiResponse($response);
@@ -188,29 +192,30 @@ class Client
     /**
      * @param string $endpoint
      * @return ApiResponse
-     * @throws ApiClientException
+     * @throws ApiException
+     * @throws GuzzleException
+     * @throws \Exception
      */
     public function get(string $endpoint)
     {
-        /** @var Response $response */
-        $response = $this->client->get(
-            $this->baseUrl . $endpoint,
-            [
-                RequestOptions::HEADERS => [
-                    'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
-                    'Accept' => 'application/json',
-                ],
-                RequestOptions::CONNECT_TIMEOUT => self::TIMEOUT
-            ]
-        );
+        try {
+            /** @var Response $response */
+            $response = $this->guzzleClient->get(
+                $this->baseUrl . $endpoint,
+                [
+                    RequestOptions::HEADERS => [
+                        'Authorization' => 'Bearer ' . $this->getBearerToken(),
+                        'Accept' => 'application/json',
+                    ],
+                    RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT
+                ]
+            );
+        } catch (\Exception $e) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
+        }
 
-        if (
-            empty($response)
-            || $response->getStatusCode() !== HttpStatusCode::OK
-            || empty((string) $response->getBody())
-        ) {
-            $httpStatusCode = $response instanceof Response ? $response->getStatusCode() : HttpStatusCode::INTERNAL_SERVER_ERROR;
-            throw new ApiClientException($httpStatusCode, 'Unexpected response');
+        if (empty($response) || !$response instanceof Response) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, 'Unrecognised response from API');
         }
 
         return new ApiResponse($response);
@@ -218,7 +223,9 @@ class Client
 
     /**
      * @return AccessToken
-     * @throws ApiClientException
+     * @throws ApiException
+     * @throws GuzzleException
+     * @throws \Exception
      */
     public function requestAccessToken()
     {
@@ -226,46 +233,73 @@ class Client
             throw new \Exception('Username and Password must be set');
         }
 
-        /** @var Response $response */
-        $response = $this->client->post(
-            $this->baseUrl . '/api/accessToken',
-            [
-                RequestOptions::FORM_PARAMS => [
-                    'grant_type' => 'password',
-                    'client_id' => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'scope' => $this->getScope(),
-                    'username' => $this->getUsername(),
-                    'password' => $this->getPassword(),
-                ],
-                RequestOptions::HEADERS => [
-                    'Content-Type' => 'application/x-www-form-urlencoded'
-                ],
-                RequestOptions::CONNECT_TIMEOUT => self::TIMEOUT
-            ]
-        );
-
-        if (
-            empty($response)
-            || empty((string) $response->getBody())
-            || $response->getStatusCode() !== HttpStatusCode::OK
-        ) {
-            $httpStatusCode = $response instanceof Response ? $response->getStatusCode() : HttpStatusCode::INTERNAL_SERVER_ERROR;
-            throw new ApiClientException($httpStatusCode, 'Unsupported response');
+        try {
+            /** @var Response $response */
+            $response = $this->guzzleClient->post(
+                $this->baseUrl . '/api/accessToken',
+                [
+                    RequestOptions::FORM_PARAMS => [
+                        'grant_type' => 'password',
+                        'client_id' => $this->clientId,
+                        'client_secret' => $this->clientSecret,
+                        'scope' => $this->getScope(),
+                        'username' => $this->getUsername(),
+                        'password' => $this->getPassword(),
+                    ],
+                    RequestOptions::HEADERS => [
+                        'Content-Type' => 'application/x-www-form-urlencoded'
+                    ],
+                    RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT
+                ]
+            );
+        } catch (\Exception $e) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
 
-        $data = json_decode((string) $response->getBody(), true);
-
-        if (
-            !isset($data['token_type'])
-            || !isset($data['expires_in'])
-            || !isset($data['access_token'])
-            || !isset($data['refresh_token'])
-        ) {
-            throw new ApiClientException($response->getStatusCode(), 'Unrecognised response format');
+        if (empty($response) || !$response instanceof Response) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, 'Unrecognised response from API');
         }
 
-        return (new AccessToken())->hydrate($data);
+        $accessToken = json_decode((string) $response->getBody(), true);
+
+        if (!$this->isValidAccessTokenArray($accessToken)) {
+            throw new ApiException($response->getStatusCode(), 'Invalid accessToken response');
+        }
+
+        return (new AccessToken())->hydrate($accessToken);
+    }
+
+    /**
+     * @param mixed $accessToken
+     * @return bool
+     */
+    public function isValidAccessTokenArray($accessToken)
+    {
+        return is_array($accessToken)
+            && isset($accessToken['token_type'])
+            && isset($accessToken['expires_in'])
+            && isset($accessToken['access_token'])
+            && isset($accessToken['refresh_token']);
+    }
+
+    /**
+     * @return string
+     * @throws ApiException
+     * @throws GuzzleException
+     */
+    public function getBearerToken()
+    {
+        $key = md5($this->baseUrl.$this->getUsername().$this->getPassword().$this->clientId);
+        if (
+            !$this->accessToken
+            || !$this->session->has($key)
+            || !$this->session->get($key)->isValid()
+        ) {
+            $accessToken = $this->requestAccessToken();
+            $this->session->set($key, $accessToken);
+            $this->accessToken = $accessToken;
+        }
+        return $this->accessToken->getToken();
     }
 
     /**
@@ -273,7 +307,9 @@ class Client
      * @param string $message
      * @param array $context
      * @return ApiResponse
-     * @throws ApiClientException
+     * @throws ApiException
+     * @throws GuzzleException
+     * @throws \Exception
      */
     public function logError(string $level, string $message, array $context = [])
     {
@@ -282,30 +318,32 @@ class Client
         }
 
         if (empty($message)) {
-            throw new \Exception('Message is required');
+            throw new \Exception('Error message is required');
         }
 
-        /** @var Response $response */
-        $response = $this->client->post(
-            $this->baseUrl . '/api/log-error',
-            [
-                RequestOptions::JSON => [
-                    'level' => $level,
-                    'message' => $message,
-                    'context' => $context
-                ],
-                RequestOptions::HEADERS => [
-                    'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
-                    'Accept' => 'application/json',
-                ],
-                RequestOptions::CONNECT_TIMEOUT => self::TIMEOUT
-            ]
-        );
+        try {
+            /** @var Response $response */
+            $response = $this->guzzleClient->post(
+                $this->baseUrl . self::LOG_ERROR_ENDPOINT,
+                [
+                    RequestOptions::JSON => [
+                        'level' => $level,
+                        'message' => $message,
+                        'context' => $context
+                    ],
+                    RequestOptions::HEADERS => [
+                        'Authorization' => 'Bearer ' . $this->getBearerToken(),
+                        'Accept' => 'application/json',
+                    ],
+                    RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT
+                ]
+            );
+        } catch (\Exception $e) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
+        }
 
-        $validHttpStatusCodes = [HttpStatusCode::OK, HttpStatusCode::CREATED];
-
-        if (empty($response) || !in_array($response->getStatusCode(), $validHttpStatusCodes)) {
-            throw new ApiClientException($response->getStatusCode(), 'Unexpected response');
+        if (empty($response) || !$response instanceof Response) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, 'Unrecognised response from API');
         }
 
         return new ApiResponse($response);

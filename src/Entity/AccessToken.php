@@ -71,20 +71,20 @@ class AccessToken
      */
     public function isValid()
     {
-        return $this->getExpiry() >= new \DateTimeImmutable();
+        return new \DateTimeImmutable() <= $this->getExpiry();
     }
 
     /**
-     * @param array $data
+     * @param array $payload
      * @return $this
      */
-    public function hydrate(array $data)
+    public function hydrate(array $payload)
     {
-        $hours = floor($data['expires_in'] / 3600);
-        $this->token = $data['access_token'];
-        $this->type = $data['token_type'];
-        $this->expiry = (new \DateTimeImmutable())->add(new \DateInterval('PT'.$hours.'H'));
-        $this->refreshToken = $data['refresh_token'];
+        $seconds = $payload['expires_in'];
+        $this->token = $payload['access_token'];
+        $this->type = $payload['token_type'];
+        $this->expiry = (new \DateTimeImmutable())->add(new \DateInterval('PT'.$seconds.'S'));
+        $this->refreshToken = $payload['refresh_token'];
         return $this;
     }
 }
