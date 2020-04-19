@@ -2,7 +2,7 @@
 
 namespace Hounslow\ApiClient\Session;
 
-class Session
+class Session implements \ArrayAccess, SessionInterface
 {
     const NAMESPACE = 'HounslowApiClient';
 
@@ -15,58 +15,62 @@ class Session
     }
 
     /**
-     * @param string $name
-     * @return bool
+     * @inheritDoc
      */
     public function has(string $name)
     {
-        return array_key_exists($name, $_SESSION[self::NAMESPACE]);
+        return $this->offsetExists($name);
     }
 
     /**
-     * @param string $name
-     * @param null $default
-     * @return mixed|null
+     * @inheritDoc
      */
     public function get(string $name, $default = null)
     {
-        if (isset($_SESSION[self::NAMESPACE][$name])) {
-            return $_SESSION[self::NAMESPACE][$name];
-        }
-        return $default;
+        return $this->offsetGet($name) ?? $default;
     }
 
     /**
-     * @param string $name
-     * @param $value
+     * @inheritDoc
      */
     public function set(string $name, $value)
     {
-        $_SESSION[self::NAMESPACE][$name] = $value;
+        $this->offsetSet($name, $value);
     }
 
     /**
-     * @return array
+     * @inheritDoc
      */
-    public function all()
+    public function offsetExists($offset)
     {
-        return $_SESSION[self::NAMESPACE];
+        return array_key_exists($offset, $_SESSION[self::NAMESPACE]);
     }
 
     /**
-     * @param string $name
+     * @inheritDoc
      */
-    public function remove(string $name)
+    public function offsetGet($offset)
     {
-        if (isset($_SESSION[self::NAMESPACE][$name])) {
-            unset($_SESSION[self::NAMESPACE][$name]);
-        }
+        return isset($_SESSION[self::NAMESPACE][$offset])
+            ? $_SESSION[self::NAMESPACE][$offset]
+            : null;
     }
 
-    public function clear()
+    /**
+     * @inheritDoc
+     */
+    public function offsetSet($offset, $value)
     {
-        if (isset($_SESSION[self::NAMESPACE])) {
-            unset($_SESSION[self::NAMESPACE]);
+        $_SESSION[self::NAMESPACE][$offset] = $value;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function offsetUnset($offset)
+    {
+        if (isset($_SESSION[self::NAMESPACE][$offset])) {
+            unset($_SESSION[self::NAMESPACE][$offset]);
         }
     }
 

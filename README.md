@@ -11,7 +11,7 @@ This API client provides connectivity to the Hounslow API
 ## Setup
 
 - Run `composer install`
-- Requires the API url, ClientID, Client Secret and an active user account.
+- Requires the `API url`, `Client ID`, `Client Secret` and an active `user account`.
 
 ## Usage
 

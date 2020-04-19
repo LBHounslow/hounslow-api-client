@@ -1,13 +1,14 @@
 <?php
 require_once 'vendor/autoload.php';
 
-use Hounslow\ApiClient\Client\Client as ApiClient;
 use GuzzleHttp\Client as GuzzleClient;
-use Hounslow\ApiClient\Session\Session;
+use Hounslow\ApiClient\Client\Client as ApiClient;
+use Hounslow\ApiClient\Enum\MonologEnum;
+use Hounslow\ApiClient\Exception\ApiException;
+use Hounslow\ApiClient\Response\ApiResponse;
 
 $apiClient = new ApiClient(
     new GuzzleClient(),
-    new Session(),
     '[ API BASE URL ]',
     '[ YOUR CLIENT ID ]',
     '[ YOUR CLIENT SECRET ]',
@@ -15,24 +16,69 @@ $apiClient = new ApiClient(
     '[ YOUR PASSWORD ]'  // optional
 );
 
-/* Or set per request...
+// Or set per request...
 $apiClient
     ->setUsername('[ YOUR USERNAME ]')
     ->setPassword('[ YOUR PASSWORD ]');
-*/
 
-// GET example
-$response = $apiClient->get('/api/services');
-$data = $response->getData();
+/**
+ * GET Example   -------------------------------
+ * Showing Exception and error handling options
+ */
+try {
+    /** @var ApiResponse $response */
+    $response = $apiClient->get('/api/get-endpoint'); // Add GET endpoint here
+} catch (ApiException $e) {
+    // Handle the exception error (http status code is available)
+    $httpStatusCode = $e->getStatusCode();
+    $response = null;
+}
 
-// POST example
-$response = $apiClient->post(
-    '/api/log-error',
-    [
-        'client_id' => '[ YOUR CLIENT ID ]', // @deprecated will be removed
-        'level' => 'debug',
-        'message' => 'Test message',
-        'context' => '{"this":"is","a":"test"}'
-    ]
-);
-$data = $response->getData();
+// Example of error handling
+if (!$response || !$response->isSuccessful()) {
+    $errorMessage = $response->getErrorMessage();
+    $errorCode = $response->getErrorCode();
+}
+
+// If successful, process the payload
+if ($response->isSuccessful()) {
+    $payload = $response->getPayload();
+}
+
+/**
+ * POST Example   -------------------------------
+ */
+try {
+    /** @var ApiResponse $response */
+    $response = $apiClient->post(
+        '/api/post-endpoint', // Add POST endpoint here
+        [
+            'firstName' => 'Bob',
+            'lastName' => 'The Builder'
+        ]
+    );
+} catch (ApiException $e) {
+    $response = null;
+}
+
+// If successful, process the payload
+if (!$response) {
+    // do something with $e
+}
+
+// continue processing
+
+/**
+ * Log an error to the API   --------------------
+ */
+
+try {
+    // some code that could fail
+} catch (\Exception $e) {
+    // Log the error to the API
+    $apiClient->logError(
+        MonologEnum::CRITICAL,
+        $e->getMessage(),
+        ['context' => 'here']
+    );
+}

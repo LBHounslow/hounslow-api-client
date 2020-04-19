@@ -4,7 +4,7 @@ namespace Hounslow\ApiClient\Exception;
 
 use Throwable;
 
-class ApiClientException extends \Exception
+class ApiException extends \Exception
 {
     /**
      * @var int
@@ -23,7 +23,6 @@ class ApiClientException extends \Exception
         int $code = 0,
         Throwable $previous = null
     ) {
-        $message = 'HTTP Status Code ' . $statusCode . (!empty($message) ? ': ' : '') . $message;
         parent::__construct($message, $code, $previous);
         $this->statusCode = $statusCode;
     }
