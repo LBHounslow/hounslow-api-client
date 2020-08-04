@@ -16,14 +16,13 @@ $apiClient = new ApiClient(
     '[ YOUR PASSWORD ]'  // optional
 );
 
-// Or set per request...
+// OR YOU CAN ADJUST USER ACCOUNT DURING A REQUEST
 $apiClient
     ->setUsername('[ YOUR USERNAME ]')
     ->setPassword('[ YOUR PASSWORD ]');
 
 /**
- * GET Example   -------------------------------
- * Showing Exception and error handling options
+ * GET REQUEST EXAMPLE WITH ERROR HANDLING
  */
 try {
     /** @var ApiResponse $response */
@@ -34,19 +33,23 @@ try {
     $response = null;
 }
 
-// Example of error handling
+/**
+ * POSSIBLE ERROR HANDLING APPROACH
+ */
 if (!$response || !$response->isSuccessful()) {
     $errorMessage = $response->getErrorMessage();
     $errorCode = $response->getErrorCode();
 }
 
-// If successful, process the payload
+/**
+ * ON SUCCESS RETRIEVING THE PAYLOAD
+ */
 if ($response->isSuccessful()) {
     $payload = $response->getPayload();
 }
 
 /**
- * POST Example   -------------------------------
+ * POSTING DATA TO THE API
  */
 try {
     /** @var ApiResponse $response */
@@ -58,22 +61,14 @@ try {
         ]
     );
 } catch (ApiException $e) {
-    $response = null;
+    // Handle $e
 }
-
-// If successful, process the payload
-if (!$response) {
-    // do something with $e
-}
-
-// continue processing
 
 /**
- * Log an error to the API   --------------------
+ * SENDING ERROR LOG TO THE API
  */
-
 try {
-    // some code that could fail
+    // some code that throws an exception
 } catch (\Exception $e) {
     // Log the error to the API
     $apiClient->logError(
@@ -81,4 +76,31 @@ try {
         $e->getMessage(),
         ['context' => 'here']
     );
+}
+
+/**
+ * UPLOAD A FILE TO THE API
+ */
+$file = new \SplFileInfo(__DIR__ . DIRECTORY_SEPARATOR . 'sample.pdf');
+
+try {
+    /** @var ApiResponse $response */
+    $response = $apiClient->upload($file);
+    $fileId = $response->getPayload()['id']; // Returns new file ID
+} catch (ApiException $e) {
+    // Handle $e
+}
+
+/**
+ * ADD A FILE TO THE [CLIENT ID]/uploads FOLDER TO BE IMPORTED BY A JOB
+ */
+$file = new \SplFileInfo(__DIR__ . DIRECTORY_SEPARATOR . 'sample.pdf');
+
+try {
+    /** @var ApiResponse $response */
+    $response = $apiClient->queue($file);           // If a FILE ALREADY EXISTS with this name on the server, this will fail.
+    // OR...
+    $response = $apiClient->queueAndReplace($file); // This will REPLACE A FILE of the same name on the server.
+} catch (ApiException $e) {
+    // Handle $e
 }
