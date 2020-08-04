@@ -16,8 +16,12 @@ use Hounslow\ApiClient\Session\SessionInterface;
 
 class Client
 {
-    const LOG_ERROR_ENDPOINT = '/api/log-error';
     const CONNECT_TIMEOUT = 5;
+    const UPLOAD_CONNECT_TIMEOUT = 600; // 10 minutes
+    const LOG_ERROR_ENDPOINT = '/api/log-error';
+    const UPLOAD_ENDPOINT = '/api/file/upload';
+    const QUEUE_ENDPOINT = '/api/file/queue';
+    const QUEUE_REPLACE_ENDPOINT = '/api/file/queue/replaceExistingFile';
 
     /**
      * @var GuzzleClient
@@ -219,6 +223,71 @@ class Client
         }
 
         return new ApiResponse($response);
+    }
+
+    /**
+     * @param \SplFileInfo $file
+     * @param string $endpoint
+     * @return ApiResponse
+     * @throws ApiException
+     * @throws GuzzleException
+     */
+    public function upload(\SplFileInfo $file, $endpoint = self::UPLOAD_ENDPOINT)
+    {
+        if (!in_array($endpoint, [self::UPLOAD_ENDPOINT, self::QUEUE_ENDPOINT, self::QUEUE_REPLACE_ENDPOINT])) {
+            throw new \InvalidArgumentException('Invalid upload endpoint');
+        }
+
+        try {
+            /** @var Response $response */
+            $response = $this->guzzleClient->post(
+                $this->baseUrl . $endpoint,
+                [
+                    RequestOptions::MULTIPART => [
+                        [
+                            'name'     => 'file',
+                            'contents' => fopen($file->getPathname(), 'r'),
+                            'filename' => $file->getFilename()
+                        ]
+                    ],
+                    RequestOptions::HEADERS => [
+                        'Authorization' => 'Bearer ' . $this->getBearerToken(),
+                        'Accept' => 'application/json',
+                    ],
+                    RequestOptions::CONNECT_TIMEOUT => self::UPLOAD_CONNECT_TIMEOUT
+                ]
+            );
+        } catch (\Exception $e) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
+        }
+
+        if (empty($response) || !$response instanceof Response) {
+            throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, 'Unrecognised response from API');
+        }
+
+        return new ApiResponse($response);
+    }
+
+    /**
+     * @param \SplFileInfo $file
+     * @return ApiResponse
+     * @throws ApiException
+     * @throws GuzzleException
+     */
+    public function queue(\SplFileInfo $file)
+    {
+        return $this->upload($file,  self::QUEUE_ENDPOINT);
+    }
+
+    /**
+     * @param \SplFileInfo $file
+     * @return ApiResponse
+     * @throws ApiException
+     * @throws GuzzleException
+     */
+    public function queueAndReplace(\SplFileInfo $file)
+    {
+        return $this->upload($file,  self::QUEUE_REPLACE_ENDPOINT);
     }
 
     /**

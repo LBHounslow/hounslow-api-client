@@ -250,4 +250,11 @@ class ClientTest extends ApiClientTestCase
         $this->expectExceptionMessage('Error message is required');
         $this->apiClient->logError(MonologEnum::ERROR, '');
     }
+
+    public function testUploadFailsWithInvalidEndpoint()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid upload endpoint');
+        $this->apiClient->upload(new \SplFileInfo('path'), '/api/xyz');
+    }
 }
