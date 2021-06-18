@@ -35,7 +35,7 @@ class ClientTest extends ApiClientTestCase
     public function setUp(): void
     {
         $this->mockGuzzleClient = $this->getMockBuilder(GuzzleClient::class)
-            ->addMethods(['post', 'get'])
+            ->onlyMethods(['post', 'get'])
             ->getMock();
         $this->mockSession = $this->createMock(Session::class);
         $this->apiClient = $this->createPartialMock(ApiClient::class, ['getBearerToken']);
@@ -64,30 +64,6 @@ class ClientTest extends ApiClientTestCase
         $this->expectException(ApiException::class);
         $this->expectExceptionMessage('Guzzle error');
         $this->apiClient->post('/api/endpoint');
-    }
-
-    /**
-     * @param mixed $response
-     * @dataProvider invalidPostResponseDataProvider
-     */
-    public function testPostMethodHandlesInvalidResponses($response)
-    {
-        $this->expectException(ApiException::class);
-        $this->expectExceptionMessage('Unrecognised response from API');
-        $this->mockGuzzleClient
-            ->method('post')
-            ->willReturn($response);
-        $this->apiClient->post('/api/endpoint');
-    }
-
-    public function invalidPostResponseDataProvider()
-    {
-        return [
-            [null],
-            [new \stdClass()],
-            [self::RANDOM_ERROR_STRING],
-            [123]
-        ];
     }
 
     /**
@@ -126,30 +102,6 @@ class ClientTest extends ApiClientTestCase
         $this->expectException(ApiException::class);
         $this->expectExceptionMessage('Guzzle error');
         $this->apiClient->get('/api/endpoint');
-    }
-
-    /**
-     * @param mixed $response
-     * @dataProvider invalidGetResponseDataProvider
-     */
-    public function testGetMethodHandlesInvalidResponses($response)
-    {
-        $this->expectException(ApiException::class);
-        $this->expectExceptionMessage('Unrecognised response from API');
-        $this->mockGuzzleClient
-            ->method('get')
-            ->willReturn($response);
-        $this->apiClient->get('/api/endpoint');
-    }
-
-    public function invalidGetResponseDataProvider()
-    {
-        return [
-            [null],
-            [new \stdClass()],
-            [self::RANDOM_ERROR_STRING],
-            [123]
-        ];
     }
 
     /**
@@ -196,30 +148,6 @@ class ClientTest extends ApiClientTestCase
         $this->expectException(ApiException::class);
         $this->expectExceptionMessage('Guzzle error');
         $this->apiClient->requestAccessToken();
-    }
-
-    /**
-     * @param mixed $response
-     * @dataProvider invalidRequestAccessTokenDataProvider
-     */
-    public function testRequestAccessTokenHandlesInvalidResponses($response)
-    {
-        $this->expectException(ApiException::class);
-        $this->expectExceptionMessage('Unrecognised response from API');
-        $this->mockGuzzleClient
-            ->method('post')
-            ->willReturn($response);
-        $this->apiClient->requestAccessToken();
-    }
-
-    public function invalidRequestAccessTokenDataProvider()
-    {
-        return [
-            [null],
-            [new \stdClass()],
-            [self::RANDOM_ERROR_STRING],
-            [123]
-        ];
     }
 
     public function testItReturnsAnAccessTokenForAValidResponse()

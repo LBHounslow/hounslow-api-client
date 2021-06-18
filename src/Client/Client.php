@@ -186,7 +186,7 @@ class Client
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
 
-        if (empty($response) || !$response instanceof Response) {
+        if (!$response instanceof Response) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, 'Unrecognised response from API');
         }
 
@@ -218,7 +218,7 @@ class Client
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
 
-        if (empty($response) || !$response instanceof Response) {
+        if (!$response instanceof Response) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, 'Unrecognised response from API');
         }
 
