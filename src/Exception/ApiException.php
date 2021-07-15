@@ -12,19 +12,27 @@ class ApiException extends \Exception
     private $statusCode;
 
     /**
+     * @var string
+     */
+    private $responseBody;
+
+    /**
      * @param int $statusCode
      * @param string $message
+     * @param string $responseBody
      * @param int $code
      * @param Throwable|null $previous
      */
     public function __construct(
         int $statusCode,
-        string $message = "",
+        string $message = '',
+        string $responseBody = '',
         int $code = 0,
         Throwable $previous = null
     ) {
         parent::__construct($message, $code, $previous);
         $this->statusCode = $statusCode;
+        $this->responseBody = $responseBody;
     }
 
     /**
@@ -33,5 +41,13 @@ class ApiException extends \Exception
     public function getStatusCode()
     {
         return $this->statusCode;
+    }
+
+    /**
+     * @return string
+     */
+    public function getResponseBody()
+    {
+        return $this->responseBody;
     }
 }

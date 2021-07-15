@@ -30,6 +30,7 @@ try {
 } catch (ApiException $e) {
     // Handle the exception error (http status code is available)
     $httpStatusCode = $e->getStatusCode();
+    $responseBody = $e->getResponseBody(); // will contain guzzle response body
     $response = null;
 }
 

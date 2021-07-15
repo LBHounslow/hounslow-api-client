@@ -11,8 +11,6 @@ use Hounslow\ApiClient\Enum\HttpStatusCodeEnum;
 use Hounslow\ApiClient\Enum\MonologEnum;
 use Hounslow\ApiClient\Exception\ApiException;
 use Hounslow\ApiClient\Response\ApiResponse;
-use Hounslow\ApiClient\Session\Session;
-use Hounslow\ApiClient\Session\SessionInterface;
 
 class Client
 {
@@ -27,11 +25,6 @@ class Client
      * @var GuzzleClient
      */
     private $guzzleClient;
-
-    /**
-     * @var SessionInterface
-     */
-    private $session;
 
     /**
      * @var string
@@ -64,11 +57,6 @@ class Client
     private $scope = ['*'];
 
     /**
-     * @var AccessToken
-     */
-    private $accessToken;
-
-    /**
      * @param GuzzleClient $guzzleClient
      * @param string $baseUrl
      * @param string $clientId
@@ -85,7 +73,6 @@ class Client
         string $password = ''
     ) {
         $this->setGuzzleClient($guzzleClient);
-        $this->setSession(new Session());
         $this->baseUrl = $baseUrl;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
@@ -148,14 +135,6 @@ class Client
     }
 
     /**
-     * @param SessionInterface $session
-     */
-    public function setSession(SessionInterface $session)
-    {
-        $this->session = $session;
-    }
-
-    /**
      * @param string $endpoint
      * @param array $data
      * @return ApiResponse
@@ -176,12 +155,14 @@ class Client
                 [
                     RequestOptions::JSON => $data,
                     RequestOptions::HEADERS => [
-                        'Authorization' => 'Bearer ' . $this->getBearerToken(),
+                        'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
                         'Accept' => 'application/json',
                     ],
                     RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT
                 ]
             );
+        } catch (ApiException $e) {
+            throw $e;
         } catch (\Exception $e) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
@@ -208,12 +189,14 @@ class Client
                 $this->baseUrl . $endpoint,
                 [
                     RequestOptions::HEADERS => [
-                        'Authorization' => 'Bearer ' . $this->getBearerToken(),
+                        'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
                         'Accept' => 'application/json',
                     ],
                     RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT
                 ]
             );
+        } catch (ApiException $e) {
+            throw $e;
         } catch (\Exception $e) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
@@ -251,12 +234,14 @@ class Client
                         ]
                     ],
                     RequestOptions::HEADERS => [
-                        'Authorization' => 'Bearer ' . $this->getBearerToken(),
+                        'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
                         'Accept' => 'application/json',
                     ],
                     RequestOptions::CONNECT_TIMEOUT => self::UPLOAD_CONNECT_TIMEOUT
                 ]
             );
+        } catch (ApiException $e) {
+            throw $e;
         } catch (\Exception $e) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
@@ -296,7 +281,7 @@ class Client
      * @throws GuzzleException
      * @throws \Exception
      */
-    public function requestAccessToken()
+    public function getAccessToken()
     {
         if (!$this->getUsername() || !$this->getPassword()) {
             throw new \Exception('Username and Password must be set');
@@ -329,46 +314,27 @@ class Client
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, 'Unrecognised response from API');
         }
 
-        $accessToken = json_decode((string) $response->getBody(), true);
+        $accessTokenResponse = json_decode((string) $response->getBody(), true);
 
-        if (!$this->isValidAccessTokenArray($accessToken)) {
-            throw new ApiException($response->getStatusCode(), 'Invalid accessToken response');
+        if (!$this->isExpectedAccessTokenResponse($accessTokenResponse)) {
+            throw new ApiException($response->getStatusCode(), 'Unexpected response, access_token not found', json_encode($accessTokenResponse));
         }
 
-        return (new AccessToken())->hydrate($accessToken);
+        return (new AccessToken())
+            ->hydrate($accessTokenResponse);
     }
 
     /**
-     * @param mixed $accessToken
+     * @param mixed $accessTokenResponse
      * @return bool
      */
-    public function isValidAccessTokenArray($accessToken)
+    public function isExpectedAccessTokenResponse($accessTokenResponse)
     {
-        return is_array($accessToken)
-            && isset($accessToken['token_type'])
-            && isset($accessToken['expires_in'])
-            && isset($accessToken['access_token'])
-            && isset($accessToken['refresh_token']);
-    }
-
-    /**
-     * @return string
-     * @throws ApiException
-     * @throws GuzzleException
-     */
-    public function getBearerToken()
-    {
-        $key = md5($this->baseUrl.$this->getUsername().$this->getPassword().$this->clientId);
-        if (
-            !$this->accessToken
-            || !$this->session->has($key)
-            || !$this->session->get($key)->isValid()
-        ) {
-            $accessToken = $this->requestAccessToken();
-            $this->session->set($key, $accessToken);
-            $this->accessToken = $accessToken;
-        }
-        return $this->accessToken->getToken();
+        return is_array($accessTokenResponse)
+            && isset($accessTokenResponse['token_type'])
+            && isset($accessTokenResponse['expires_in'])
+            && isset($accessTokenResponse['access_token'])
+            && isset($accessTokenResponse['refresh_token']);
     }
 
     /**
@@ -401,12 +367,14 @@ class Client
                         'context' => $context
                     ],
                     RequestOptions::HEADERS => [
-                        'Authorization' => 'Bearer ' . $this->getBearerToken(),
+                        'Authorization' => 'Bearer ' . $this->getAccessToken()->getToken(),
                         'Accept' => 'application/json',
                     ],
                     RequestOptions::CONNECT_TIMEOUT => self::CONNECT_TIMEOUT
                 ]
             );
+        } catch (ApiException $e) {
+            throw $e;
         } catch (\Exception $e) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
