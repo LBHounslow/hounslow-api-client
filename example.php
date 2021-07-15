@@ -39,6 +39,7 @@ try {
 if (!$response || !$response->isSuccessful()) {
     $errorMessage = $response->getErrorMessage();
     $errorCode = $response->getErrorCode();
+    $responseBody = $e->getResponseBody(); // will contain guzzle response body
 }
 
 /**
