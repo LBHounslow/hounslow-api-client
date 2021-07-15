@@ -26,6 +26,6 @@ This repository is currently closed for contribution. Please [report an an issue
 
 ### Tests
 
-There are 35 tests with 97 assertions.
+There are 25 tests with 77 assertions.
 
 Run `./vendor/bin/phpunit tests`
