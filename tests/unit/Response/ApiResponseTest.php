@@ -3,8 +3,8 @@
 namespace Tests\Unit\Response;
 
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
-use Hounslow\ApiClient\Enum\HttpStatusCodeEnum;
-use Hounslow\ApiClient\Response\ApiResponse;
+use LBHounslow\ApiClient\Enum\HttpStatusCodeEnum;
+use LBHounslow\ApiClient\Response\ApiResponse;
 use Tests\Unit\ApiClientTestCase;
 
 class ApiResponseTest extends ApiClientTestCase

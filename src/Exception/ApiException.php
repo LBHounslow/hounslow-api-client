@@ -1,6 +1,6 @@
 <?php
 
-namespace Hounslow\ApiClient\Exception;
+namespace LBHounslow\ApiClient\Exception;
 
 use Throwable;
 

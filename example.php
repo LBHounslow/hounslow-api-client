@@ -2,10 +2,10 @@
 require_once 'vendor/autoload.php';
 
 use GuzzleHttp\Client as GuzzleClient;
-use Hounslow\ApiClient\Client\Client as ApiClient;
-use Hounslow\ApiClient\Enum\MonologEnum;
-use Hounslow\ApiClient\Exception\ApiException;
-use Hounslow\ApiClient\Response\ApiResponse;
+use LBHounslow\ApiClient\Client\Client as ApiClient;
+use LBHounslow\ApiClient\Enum\MonologEnum;
+use LBHounslow\ApiClient\Exception\ApiException;
+use LBHounslow\ApiClient\Response\ApiResponse;
 
 $apiClient = new ApiClient(
     new GuzzleClient(),

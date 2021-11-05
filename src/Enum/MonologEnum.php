@@ -1,6 +1,6 @@
 <?php
 
-namespace Hounslow\ApiClient\Enum;
+namespace LBHounslow\ApiClient\Enum;
 
 class MonologEnum
 {

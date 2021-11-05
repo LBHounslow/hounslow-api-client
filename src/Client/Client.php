@@ -1,16 +1,16 @@
 <?php
 
-namespace Hounslow\ApiClient\Client;
+namespace LBHounslow\ApiClient\Client;
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
-use Hounslow\ApiClient\Entity\AccessToken;
-use Hounslow\ApiClient\Enum\HttpStatusCodeEnum;
-use Hounslow\ApiClient\Enum\MonologEnum;
-use Hounslow\ApiClient\Exception\ApiException;
-use Hounslow\ApiClient\Response\ApiResponse;
+use LBHounslow\ApiClient\Entity\AccessToken;
+use LBHounslow\ApiClient\Enum\HttpStatusCodeEnum;
+use LBHounslow\ApiClient\Enum\MonologEnum;
+use LBHounslow\ApiClient\Exception\ApiException;
+use LBHounslow\ApiClient\Response\ApiResponse;
 
 class Client
 {

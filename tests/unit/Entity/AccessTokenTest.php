@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Entity;
 
-use Hounslow\ApiClient\Entity\AccessToken;
+use LBHounslow\ApiClient\Entity\AccessToken;
 use Tests\Unit\ApiClientTestCase;
 
 class AccessTokenTest extends ApiClientTestCase
