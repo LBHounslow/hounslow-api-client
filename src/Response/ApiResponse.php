@@ -1,6 +1,6 @@
 <?php
 
-namespace Hounslow\ApiClient\Response;
+namespace LBHounslow\ApiClient\Response;
 
 use GuzzleHttp\Psr7\Response;
 

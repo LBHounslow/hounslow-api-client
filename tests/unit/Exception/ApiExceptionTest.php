@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Exception;
 
-use Hounslow\ApiClient\Enum\HttpStatusCodeEnum;
-use Hounslow\ApiClient\Exception\ApiException;
+use LBHounslow\ApiClient\Enum\HttpStatusCodeEnum;
+use LBHounslow\ApiClient\Exception\ApiException;
 use Tests\Unit\ApiClientTestCase;
 
 class ApiExceptionTest extends ApiClientTestCase

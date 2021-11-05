@@ -1,6 +1,6 @@
 <?php
 
-namespace Hounslow\ApiClient\Session;
+namespace LBHounslow\ApiClient\Session;
 
 interface SessionInterface
 {

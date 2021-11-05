@@ -5,12 +5,12 @@ namespace Tests\Unit\Client;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\InvalidArgumentException as GuzzleInvalidArgumentException;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
-use Hounslow\ApiClient\Client\Client as ApiClient;
-use Hounslow\ApiClient\Entity\AccessToken;
-use Hounslow\ApiClient\Enum\HttpStatusCodeEnum;
-use Hounslow\ApiClient\Enum\MonologEnum;
-use Hounslow\ApiClient\Exception\ApiException;
-use Hounslow\ApiClient\Response\ApiResponse;
+use LBHounslow\ApiClient\Client\Client as ApiClient;
+use LBHounslow\ApiClient\Entity\AccessToken;
+use LBHounslow\ApiClient\Enum\HttpStatusCodeEnum;
+use LBHounslow\ApiClient\Enum\MonologEnum;
+use LBHounslow\ApiClient\Exception\ApiException;
+use LBHounslow\ApiClient\Response\ApiResponse;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Unit\ApiClientTestCase;
 
