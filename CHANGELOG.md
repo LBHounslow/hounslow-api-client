@@ -2,6 +2,12 @@
 
 ## Changelog
 
+### Release v0.7 `08/05/2023`
+
+Added specific handling for `GuzzleHttp\Exception\ClientException` and `GuzzleHttp\Exception\BadResponseException` thrown when API returns 4xx and 5xx responses.
+
+Any 4xx response will be handled and the response stored in `LBHounslow\ApiClient\Response\ApiResponse` (so error messages can be accessed)
+
 ### Release v0.6 `19/04/2020`
 
 This release is so that we have more visibility over the request to fetch an accessToken and the Guzzle response body 
