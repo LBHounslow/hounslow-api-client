@@ -3,6 +3,8 @@
 namespace LBHounslow\ApiClient\Client;
 
 use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\BadResponseException;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
@@ -162,7 +164,12 @@ class Client
                 ]
             );
         } catch (ApiException $e) {
-            throw $e;
+            throw new \Exception($e->getMessage(), $e->getCode(), $e->getPrevious());
+        } catch (ClientException|BadResponseException $e) {
+            $response = $e->getResponse(); // handle 4xx responses
+            if ($response->getStatusCode() >= 500) { // re-throw 5xx ones
+                throw new \Exception($e->getMessage(), $e->getCode(), $e->getPrevious());
+            }
         } catch (\Exception $e) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
@@ -196,7 +203,12 @@ class Client
                 ]
             );
         } catch (ApiException $e) {
-            throw $e;
+            throw new \Exception($e->getMessage(), $e->getCode(), $e->getPrevious());
+        } catch (ClientException|BadResponseException $e) {
+            $response = $e->getResponse(); // handle 4xx responses
+            if ($response->getStatusCode() >= 500) { // re-throw 5xx ones
+                throw new \Exception($e->getMessage(), $e->getCode(), $e->getPrevious());
+            }
         } catch (\Exception $e) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
@@ -241,7 +253,12 @@ class Client
                 ]
             );
         } catch (ApiException $e) {
-            throw $e;
+            throw new \Exception($e->getMessage(), $e->getCode(), $e->getPrevious());
+        } catch (ClientException|BadResponseException $e) {
+            $response = $e->getResponse(); // handle 4xx responses
+            if ($response->getStatusCode() >= 500) { // re-throw 5xx ones
+                throw new \Exception($e->getMessage(), $e->getCode(), $e->getPrevious());
+            }
         } catch (\Exception $e) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
@@ -374,7 +391,12 @@ class Client
                 ]
             );
         } catch (ApiException $e) {
-            throw $e;
+            throw new \Exception($e->getMessage(), $e->getCode(), $e->getPrevious());
+        } catch (ClientException|BadResponseException $e) {
+            $response = $e->getResponse(); // handle 4xx responses
+            if ($response->getStatusCode() >= 500) { // re-throw 5xx ones
+                throw new \Exception($e->getMessage(), $e->getCode(), $e->getPrevious());
+            }
         } catch (\Exception $e) {
             throw new ApiException(HttpStatusCodeEnum::INTERNAL_SERVER_ERROR, $e->getMessage());
         }
